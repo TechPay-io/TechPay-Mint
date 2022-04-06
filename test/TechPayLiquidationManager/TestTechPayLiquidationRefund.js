@@ -1,0 +1,390 @@
+const {
+  BN,
+  constants,
+  expectEvent,
+  expectRevert,
+  time
+} = require('@openzeppelin/test-helpers');
+
+const { ethers } = require('hardhat');
+const { expect } = require('chai');
+
+const { weiToEther, etherToWei, amount18 } = require('../utils/index');
+
+const TechPayLiquidationManager = artifacts.require(
+  'MockTechPayLiquidationManager'
+);
+const TechPayMintTokenRegistry = artifacts.require('TechPayMintTokenRegistry');
+const TechPayDeFiTokenStorage = artifacts.require('TechPayDeFiTokenStorage');
+const TechPayMint = artifacts.require('TechPayMint');
+const TechPayMintAddressProvider = artifacts.require(
+  'TechPayMintAddressProvider'
+);
+const TechPayMintRewardDistribution = artifacts.require(
+  'TechPayMintRewardDistribution'
+);
+const TechPayTUSD = artifacts.require('TechPayTUSD');
+const MockToken = artifacts.require('MockToken');
+const MockPriceOracleProxy = artifacts.require('MockPriceOracleProxy');
+
+let debtValue;
+let offeredRatio;
+let totalSupply;
+let finalInitiatorBalance;
+let oldBidderTwoBalance;
+let provider;
+let startTime;
+
+const PRICE_PRECISION = 1e18;
+
+contract(
+  'TechPayLiquidationManager',
+  function ([
+    owner,
+    admin,
+    borrower,
+    firstBidder,
+    secondBidder,
+    initiator
+  ]) {
+    before(async function () {
+      provider = ethers.provider;
+
+      /** all the necessary setup  */
+      this.techpayMintAddressProvider = await TechPayMintAddressProvider.new({
+        from: owner
+      });
+      await this.techpayMintAddressProvider.initialize(owner);
+
+      this.techpayLiquidationManager = await TechPayLiquidationManager.new({
+        from: owner
+      });
+      await this.techpayLiquidationManager.initialize(
+        owner,
+        this.techpayMintAddressProvider.address
+      );
+
+      this.techpayMint = await TechPayMint.new({ from: owner });
+      await this.techpayMint.initialize(
+        owner,
+        this.techpayMintAddressProvider.address
+      );
+
+      this.techpayMintTokenRegistry = await TechPayMintTokenRegistry.new();
+      await this.techpayMintTokenRegistry.initialize(owner);
+
+      this.collateralPool = await TechPayDeFiTokenStorage.new({ from: owner });
+      await this.collateralPool.initialize(
+        this.techpayMintAddressProvider.address,
+        true
+      );
+
+      this.debtPool = await TechPayDeFiTokenStorage.new({ from: owner });
+      await this.debtPool.initialize(
+        this.techpayMintAddressProvider.address,
+        true
+      );
+
+      this.techpayTUSD = await TechPayTUSD.new({ from: owner });
+
+      await this.techpayTUSD.initialize(owner);
+
+      this.techpayMintRewardDistribution =
+        await TechPayMintRewardDistribution.new({
+          from: owner
+        });
+      await this.techpayMintRewardDistribution.initialize(
+        owner,
+        this.techpayMintAddressProvider.address
+      );
+
+      this.mockToken = await MockToken.new({ from: owner });
+      await this.mockToken.initialize('wTPC', 'wTPC', 18);
+
+      this.mockPriceOracleProxy = await MockPriceOracleProxy.new({
+        from: owner
+      });
+
+      await this.techpayMintAddressProvider.setTechPayMint(
+        this.techpayMint.address,
+        { from: owner }
+      );
+      await this.techpayMintAddressProvider.setCollateralPool(
+        this.collateralPool.address,
+        { from: owner }
+      );
+      await this.techpayMintAddressProvider.setDebtPool(this.debtPool.address, {
+        from: owner
+      });
+      await this.techpayMintAddressProvider.setTokenRegistry(
+        this.techpayMintTokenRegistry.address,
+        { from: owner }
+      );
+      await this.techpayMintAddressProvider.setRewardDistribution(
+        this.techpayMintRewardDistribution.address,
+        { from: owner }
+      );
+      await this.techpayMintAddressProvider.setPriceOracleProxy(
+        this.mockPriceOracleProxy.address,
+        { from: owner }
+      );
+      await this.techpayMintAddressProvider.setTechPayLiquidationManager(
+        this.techpayLiquidationManager.address,
+        { from: owner }
+      );
+
+      // set the initial value; 1 wTPC = 1 USD; 1 xTPC = 1 USD; 1 tUSD = 1 USD
+      await this.mockPriceOracleProxy.setPrice(
+        this.mockToken.address,
+        etherToWei(1)
+      );
+      await this.mockPriceOracleProxy.setPrice(
+        this.techpayTUSD.address,
+        etherToWei(1)
+      );
+
+      await this.techpayMintTokenRegistry.addToken(
+        this.mockToken.address,
+        '',
+        this.mockPriceOracleProxy.address,
+        18,
+        true,
+        true,
+        false,
+        true
+      );
+      await this.techpayMintTokenRegistry.addToken(
+        this.techpayTUSD.address,
+        '',
+        this.mockPriceOracleProxy.address,
+        18,
+        true,
+        false,
+        true,
+        false
+      );
+
+      await this.techpayTUSD.addMinter(this.techpayMint.address, { from: owner });
+
+      await this.techpayLiquidationManager.updateTechPayMintContractAddress(
+        this.techpayMint.address,
+        { from: owner }
+      );
+
+      await this.techpayLiquidationManager.updateInitiatorBonus(
+        etherToWei(0.05)
+      );
+
+      // mint firstBidder enough tUSD to bid for liquidated collateral
+      await this.techpayTUSD.mint(firstBidder, etherToWei(10000), {
+        from: owner
+      });
+
+      await this.techpayTUSD.mint(secondBidder, etherToWei(10000), {
+        from: owner
+      });
+
+    });
+
+    describe('Liquidation phase [Price goes down, two bidders take part in the auction]', function () {
+      before(async function () {
+        await this.mockToken.mint(borrower, etherToWei(9999));
+
+        await this.mockToken.approve(
+          this.techpayMint.address,
+          etherToWei(9999),
+          {
+            from: borrower
+          }
+        );
+
+        // borrower deposits all his/her 9999 wTPC
+        await this.techpayMint.mustDeposit(
+          this.mockToken.address,
+          etherToWei(9999),
+          { from: borrower }
+        );
+
+        await this.techpayMint.mustMintMax(this.techpayTUSD.address, 30000, {
+          from: borrower
+        });
+
+        totalSupply = weiToEther(await this.techpayTUSD.totalSupply());
+      });
+
+      it('should get the new updated wTPC price ($1 -> $0.5)', async function () {
+        // assume: the value of wTPC has changed to 0.5 USD !!
+        await this.mockPriceOracleProxy.setPrice(
+          this.mockToken.address,
+          etherToWei(0.5)
+        );
+
+        const price = await this.mockPriceOracleProxy.getPrice(
+          this.mockToken.address
+        );
+
+        expect(weiToEther(price).toString()).to.be.equal('0.5');
+      });
+
+      it('should find collateral not eligible anymore', async function () {
+
+        // make sure the collateral isn't eligible any more
+        const isEligible =
+          await this.techpayLiquidationManager.collateralIsEligible(borrower);
+
+        expect(isEligible).to.be.equal(false);
+      });
+
+      it('should show unused balance (10000) for initiator', async function () {
+        let balance = await provider.getBalance(initiator);
+        expect(Number(weiToEther(balance))).to.equal(10000);
+      });
+
+      it('should start liquidation', async function () {
+        startTime = await time.latest();
+        await this.techpayLiquidationManager.setTime(startTime);
+
+        let _auctionStartEvent =
+          await this.techpayLiquidationManager.liquidate(borrower, {
+            from: initiator
+          });
+
+        expectEvent(_auctionStartEvent, 'AuctionStarted', {
+          0: new BN('1'),
+          1: borrower
+        });
+      });
+
+      it('should get correct liquidation details', async function () {
+        let newTime = Number(startTime) + 60; //passing a timestamp with 60 additional seconds
+
+        let details = await this.techpayLiquidationManager.getAuctionPricing(
+          new BN('1'),
+          new BN(newTime)
+        );
+
+        const { 0: offeringRatio } = details;
+
+        offeredRatio = offeringRatio;
+        debtValue = 3366329999999999999998 / 1e18;;
+
+        expect(offeringRatio.toString()).to.equal(amount18(0.3));
+      });
+
+      it('increase time by 1 minute', async function() {
+        await this.techpayLiquidationManager.increaseTime(60);
+      })
+
+      it('should allow a bidder1 to bid (25%)', async function () {
+        await this.techpayTUSD.approve(
+          this.techpayLiquidationManager.address,
+          etherToWei(1500),
+          { from: firstBidder }
+        );
+
+        let _bidPlacedEvent = await this.techpayLiquidationManager.bid(1, etherToWei(0.25), {
+          from: firstBidder,
+          value: etherToWei(0.05)
+        });
+  
+        expectEvent(_bidPlacedEvent, 'BidPlaced', {
+          nonce: new BN('1'),
+          percentage: etherToWei(0.25),
+          bidder: firstBidder,
+          offeredRatio: etherToWei(0.3)
+        });
+      });
+
+      it('the initiator should get initiatorBonus', async function () {
+        finalInitiatorBalance = await provider.getBalance(initiator);
+        expect(
+          Number(weiToEther(finalInitiatorBalance))
+        ).to.be.greaterThanOrEqual(10000);
+      });
+
+      it('the bidder1 should have (10000 - (3366.33 * 0.25)) 9158.41 tUSD remaining', async function () {
+        let remainingBalance = 10000 - debtValue * 0.25;
+        let currentBalance = await this.techpayTUSD.balanceOf(firstBidder);
+
+        expect(Number(weiToEther(currentBalance))).to.equal(remainingBalance);
+      });
+
+      it('the bidder1 should get 30% of the (1/4) wTPC collateral', async function () {
+        let balance = await this.mockToken.balanceOf(firstBidder);
+
+        let offeredCollateral = ((offeredRatio / PRICE_PRECISION) * (0.25 * 9999));
+        expect(weiToEther(balance)).to.equal(offeredCollateral.toString());
+      });
+
+      it('should allow a bidder2 to bid on the remaining collateral', async function () {
+        await this.techpayTUSD.approve(
+          this.techpayLiquidationManager.address,
+          etherToWei(3900),
+          { from: secondBidder }
+        );
+
+        let _bidPlacedEvent = await this.techpayLiquidationManager.bid(1, etherToWei(1), {
+          from: secondBidder,
+          value: etherToWei(0.05)
+        });
+  
+        expectEvent(_bidPlacedEvent, 'BidPlaced', {
+          nonce: new BN('1'),
+          percentage: etherToWei(0.75),
+          bidder: secondBidder,
+          offeredRatio: etherToWei(0.3)
+        });
+        
+        oldBidderTwoBalance = await provider.getBalance(secondBidder);
+      });
+
+      it('the initiator should not get a bonus again', async function () {
+        let balance = await provider.getBalance(initiator);
+
+        expect(Number(weiToEther(balance))).to.be.lessThanOrEqual(
+          Number(weiToEther(finalInitiatorBalance))
+        );
+      });
+
+      it('should make sure bidder2 gets refunded', async function () {
+        let balance = await provider.getBalance(secondBidder);
+
+        expect(Number(weiToEther(balance))).to.be.lessThanOrEqual(
+          Number(weiToEther(oldBidderTwoBalance))
+        );
+      });
+
+      it('the bidder2 should have (10000 - (3366.33 * 0.75)) 7,475.25 tUSD remaining', async function () {
+        let remainingBalance = 10000 - debtValue * 0.75;
+        let currentBalance = await this.techpayTUSD.balanceOf(secondBidder);
+
+        expect(weiToEther(currentBalance) * 1).to.equal(
+          Number(remainingBalance.toFixed(4))
+        );
+      });
+
+      it('the bidder2 should get 30% of the (3/4) wTPC collateral', async function () {
+        let balance = await this.mockToken.balanceOf(secondBidder);
+        
+        let offeredCollateral = ((offeredRatio / PRICE_PRECISION) * (0.75 * 9999));
+        expect(weiToEther(balance)).to.equal(offeredCollateral.toString());
+      });
+
+      it('the collateral pool should get the remaining 70% of the wTPC collateral back', async function () {
+        let balance = await this.collateralPool.balanceOf(borrower, this.mockToken.address);
+
+        let remainingCollateral = 9999 - (offeredRatio / PRICE_PRECISION * 9999);
+        expect(weiToEther(balance)).to.equal(remainingCollateral.toString());
+      });
+
+      it('should show the new total supply (after burning tokens)', async function () {
+        let burntAmount = await this.techpayLiquidationManager.getBurntAmount(this.techpayTUSD.address);
+        let newTotalSupply = weiToEther(await this.techpayTUSD.totalSupply());
+
+        expect(Number(newTotalSupply)).to.equal(
+         Number((totalSupply - (weiToEther(burntAmount) * 1)).toFixed(3))
+        );
+      });
+    });
+  }
+);
