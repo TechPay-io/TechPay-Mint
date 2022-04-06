@@ -27,9 +27,9 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
     // NOTE: No idea what we shall do with the fee pool. Mint and distribute along with rewards maybe?
     mapping(address => uint256) public feePool;
 
-    // fMintFeeDigitsCorrection represents the value to be used
+    // MintFeeDigitsCorrection represents the value to be used
     // to adjust result decimals after applying fee to a value calculation.
-    uint256 public constant fMintFeeDigitsCorrection = 10000;
+    uint256 public constant MintFeeDigitsCorrection = 10000;
 
     // initialize initializes the contract properly before the first use.
     function initialize() public initializer {
@@ -50,10 +50,10 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
     // Abstract function required for the collateral manager
     // -------------------------------------------------------------
 
-    // getFMintFee4dec (abstract) represents the current percentage of the created tokens
+    // getMintFee4dec (abstract) represents the current percentage of the created tokens
     // captured as a fee.
     // The value is kept in 4 decimals; 50 = 0.005 = 0.5%
-    function getFMintFee4dec() public view returns (uint256);
+    function getMintFee4dec() public view returns (uint256);
 
     // getDebtPool (abstract) returns the address of debt pool.
     function getDebtPool() public view returns (ITechPayDeFiTokenStorage);
@@ -74,7 +74,7 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
     // of the given account.
     function rewardUpdate(address _account) public;
 
-    // canMint checks if the given token can be minted in the fMint protocol.
+    // canMint checks if the given token can be minted in the Mint protocol.
     function canMint(address _token) public view returns (bool);
 
     // getMaxToMint (abstract) calculates the maximum amount of given token
@@ -145,7 +145,7 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
 
         // calculate the minting fee; the fee is collected from the minted tokens
         // adjust the fee by adding +1 to round the fee up and prevent dust manipulations
-        uint256 fee = _amount.mul(getFMintFee4dec()).div(fMintFeeDigitsCorrection).add(1);
+        uint256 fee = _amount.mul(getMintFee4dec()).div(MintFeeDigitsCorrection).add(1);
 
         // make sure the fee does not consume the minted amount on dust operations
         if (fee >= _amount) {
@@ -169,7 +169,7 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
         feePool[_token] = feePool[_token].add(fee);
 
         // mint the requested balance of the ERC20 token minus the fee
-        // @NOTE: the fMint contract must have the minter privilege on the ERC20 token!
+        // @NOTE: the Mint contract must have the minter privilege on the ERC20 token!
         ERC20Mintable(_token).mint(msg.sender, _amount.sub(fee));
 
         // emit the minter notification event
@@ -265,7 +265,7 @@ contract TechPayMintDebt is Initializable, ReentrancyGuard, TechPayMintErrorCode
         }
 
         // make sure we are allowed to transfer funds from the caller
-        // to the fMint deposit pool
+        // to the Mint deposit pool
         if (_amount > ERC20(_token).allowance(msg.sender, address(this))) {
             return ERR_LOW_ALLOWANCE;
         }

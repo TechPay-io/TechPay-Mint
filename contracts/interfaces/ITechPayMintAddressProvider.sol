@@ -9,7 +9,7 @@ import "../interfaces/IPriceOracleProxy.sol";
 import "./IERC20Detailed.sol";
 
 /**
- * This interface defines available functions of the FMint Address Provider contract.
+ * This interface defines available functions of the Mint Address Provider contract.
  *
  * Note: We may want to create a cache for certain external contract access scenarios (like
  * for token price/value calculation, which needs the oracle and registry).
@@ -25,10 +25,10 @@ interface ITechPayMintAddressProvider {
 	// setTechPayLiquidationManager modifies the address of the TechPayLiquidationManager contract.
 	function setTechPayLiquidationManager(address _addr) external;
 	
-	// getTechPayMint returns the address of the TechPay fMint contract.
+	// getTechPayMint returns the address of the TechPay Mint contract.
 	function getTechPayMint() external view returns (ITechPayMintBalanceGuard);
 
-	// setTechPayMint modifies the address of the TechPay fMint contract.
+	// setTechPayMint modifies the address of the TechPay Mint contract.
 	function setTechPayMint(address _addr) external;
 
 	// getTokenRegistry returns the address of the token registry contract.

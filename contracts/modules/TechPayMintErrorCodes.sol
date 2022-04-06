@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
 /**
- * FMintErrorCodes defines set of soft error codes
- * returned from fMint contract calls.
+ * MintErrorCodes defines set of soft error codes
+ * returned from Mint contract calls.
  */
 contract TechPayMintErrorCodes {
 	// Error Code: No error.
@@ -29,7 +29,7 @@ contract TechPayMintErrorCodes {
 	// Error Code: Account balance too low to continue.
 	uint256 public constant ERR_LOW_BALANCE = 0x1002;
 
-	// Error Code: ERC20 allowance for the fMint too low.
+	// Error Code: ERC20 allowance for the Mint too low.
 	uint256 public constant ERR_LOW_ALLOWANCE = 0x1003;
 
 	// Error Code: Collateral is missing or has no value.

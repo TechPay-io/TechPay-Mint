@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
 
-// TechPayMintConfig implements the fMint core contract configuration
+// TechPayMintConfig implements the Mint core contract configuration
 // with the ability to fine tune settings by the contract owner.
 contract TechPayMintConfig is Initializable, Ownable
 {
@@ -19,10 +19,10 @@ contract TechPayMintConfig is Initializable, Ownable
     // The value is kept in 4 decimals, e.g. value 50000 = 5.0
     uint256 public rewardEligibilityRatio4dec;
 
-    // fMintFee represents the current percentage of the created tokens
+    // MintFee represents the current percentage of the created tokens
     // captured as a fee.
     // The value is kept in 4 decimals; 50 = 0.005 = 0.5%
-    uint256 public fMintFee4dec;
+    uint256 public MintFee4dec;
 
     // minDebtValue is a minimum allowed debt value
     uint256 public minDebtValue;
@@ -35,7 +35,7 @@ contract TechPayMintConfig is Initializable, Ownable
         // initialize default values
         collateralLowestDebtRatio4dec = 30000;
         rewardEligibilityRatio4dec = 50000;
-        fMintFee4dec = 50;
+        MintFee4dec = 50;
         minDebtValue = 1e18;
     }
 
@@ -52,7 +52,7 @@ contract TechPayMintConfig is Initializable, Ownable
     // entitles users to earn rewards.
     event RewardEligibilityRatioChanged(uint256 ratio4dec);
 
-    // MintFeeChanged is emitted on change of the fMint minting
+    // MintFeeChanged is emitted on change of the Mint minting
     // fee percentage.
     event MintFeeChanged(uint256 fee4dec);
 
@@ -88,7 +88,7 @@ contract TechPayMintConfig is Initializable, Ownable
     // and debt value users must have to earn rewards.
     function cfgSetMintFee(uint256 _fee4dec) public onlyOwner {
         // update the value
-        fMintFee4dec = _fee4dec;
+        MintFee4dec = _fee4dec;
 
         // emit event
         emit MintFeeChanged(_fee4dec);

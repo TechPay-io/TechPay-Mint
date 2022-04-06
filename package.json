@@ -1,7 +1,7 @@
 {
-  "name": "techpay-defi-fmint",
+  "name": "techpay-defi-mint",
   "version": "1.0.0",
-  "description": "TechPay DeFi implementation of fMint module.",
+  "description": "TechPay DeFi implementation of Mint module.",
   "main": "truffle-config.js",
   "scripts": {},
   "repository": {
@@ -11,7 +11,7 @@
   "keywords": [
     "TechPay",
     "DeFi",
-    "fMint",
+    "Mint",
     "Solidity"
   ],
   "author": "TechPay",

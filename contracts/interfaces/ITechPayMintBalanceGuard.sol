@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-// ITechPayMintCore defines the interface of the TechPay fMint core contract.
+// ITechPayMintCore defines the interface of the TechPay Mint core contract.
 interface ITechPayMintBalanceGuard {
     // rewardCanClaim checks if the account can claim accumulated rewards.
     function rewardCanClaim(address _account) external view returns (bool);

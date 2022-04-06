@@ -51,7 +51,7 @@ contract TechPayLiquidationManager is
   mapping(uint256 => AuctionInformation) public getAuction;
   mapping(address => uint256) public getBurntAmount;
 
-  // addressProvider represents the connection to other FMint related contracts.
+  // addressProvider represents the connection to other Mint related contracts.
   ITechPayMintAddressProvider public addressProvider;
 
   address public techpayMintContract;

@@ -33,7 +33,7 @@ contract TechPayMint is Initializable, TechPayMintBalanceGuard, TechPayMintColla
     // TechPay minter configuration
     // ----------------------------
 
-    // addressProvider represents the connection to other FMint related
+    // addressProvider represents the connection to other Mint related
     // contracts.
     ITechPayMintAddressProvider public addressProvider;
 
@@ -66,10 +66,10 @@ contract TechPayMint is Initializable, TechPayMintBalanceGuard, TechPayMintColla
         return rewardEligibilityRatio4dec;
     }
 
-    // getFMintFee4dec represents the current percentage of the created tokens
+    // getMintFee4dec represents the current percentage of the created tokens
     // captured as a fee.
-    function getFMintFee4dec() public view returns (uint256) {
-        return fMintFee4dec;
+    function getMintFee4dec() public view returns (uint256) {
+        return MintFee4dec;
     }
 
     // getMinDebtValue returns the minimum debt value.
@@ -96,7 +96,7 @@ contract TechPayMint is Initializable, TechPayMintBalanceGuard, TechPayMintColla
         return addressProvider.getTokenRegistry().canDeposit(_token);
     }
 
-    // canMint checks if the given token can be minted in the fMint protocol.
+    // canMint checks if the given token can be minted in the Mint protocol.
     function canMint(address _token) public view returns (bool) {
         return addressProvider.getTokenRegistry().canMint(_token);
     }

@@ -13,7 +13,7 @@ import "../interfaces/ITechPayMintAddressProvider.sol";
 import "../interfaces/ITechPayMintTokenRegistry.sol";
 
 // TechPayDeFiTokenStorage implements a token pool used by the TechPay
-// DeFi fMint protocol to track collateral and debt.
+// DeFi Mint protocol to track collateral and debt.
 contract TechPayDeFiTokenStorage is Initializable, ITechPayDeFiTokenStorage
 {
     // define used libs
@@ -25,7 +25,7 @@ contract TechPayDeFiTokenStorage is Initializable, ITechPayDeFiTokenStorage
     // Contract initialization, behavior and access control
     // -------------------------------------------------------------
 
-    // addressProvider represents the connection to other fMint contracts.
+    // addressProvider represents the connection to other Mint contracts.
     ITechPayMintAddressProvider public addressProvider;
 
     // dustAdjustment represents the adjustment added to the value calculation
@@ -33,14 +33,14 @@ contract TechPayDeFiTokenStorage is Initializable, ITechPayDeFiTokenStorage
     bool public valueDustAdjustment;
 
     // onlyMinter modifier controls access to sensitive functions
-    // to allow only calls from fMint Minter contract.
+    // to allow only calls from Mint Minter contract.
     modifier onlyMinter() {
         require(msg.sender == address(addressProvider.getTechPayMint()), "token storage access restricted");
         _;
     }
 
     // onlyMinterOrLiquidationManager modifier controls access to sensitive functions
-    // to allow only calls from fMint Minter or fLiquidationManager contract.
+    // to allow only calls from Mint Minter or fLiquidationManager contract.
     modifier onlyMinterOrLiquidationManager() {
         require(msg.sender == address(addressProvider.getTechPayMint()) || msg.sender == address(addressProvider.getTechPayLiquidationManager()), "token storage access restricted"); 
         _;       

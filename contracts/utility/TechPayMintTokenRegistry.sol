@@ -8,7 +8,7 @@ import "../interfaces/IERC20Detailed.sol";
 
 /**
 * This utility contract implements an update aware
-* list of tokens used by the TechPay fMint protocol.
+* list of tokens used by the TechPay Mint protocol.
 *
 * version 0.1.0
 * license MIT

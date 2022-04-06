@@ -15,9 +15,9 @@ interface ITechPayMintTokenRegistry {
     // canMint informs if the specified token can be deposited to collateral pool.
     function canDeposit(address _token) external view returns (bool);
 
-	// canMint informs if the given token can be minted in the fMint protocol.
+	// canMint informs if the given token can be minted in the Mint protocol.
     function canMint(address _token) external view returns (bool);
 
-     // canTrade informs if the given token can be traded in the fMint protocol.
+     // canTrade informs if the given token can be traded in the Mint protocol.
      function canTrade(address _token) external view returns (bool);
 }

@@ -14,7 +14,7 @@ import "../interfaces/ITechPayMintBalanceGuard.sol";
 import "../modules/TechPayMintErrorCodes.sol";
 import "../modules/TechPayMintRewardManager.sol";
 
-// TechPayMintRewardDistribution implements the fMint rewards handling
+// TechPayMintRewardDistribution implements the Mint rewards handling
 // using RewardManager to process rewards distribution and this pool
 // to unlock rewards in a defined flat rate.
 //
@@ -40,7 +40,7 @@ contract TechPayMintRewardDistribution is Initializable, Ownable, TechPayMintRew
     // State variables
     // ---------------------------------------------------------------------
 
-    // addressProvider represents the connection to other FMint related
+    // addressProvider represents the connection to other Mint related
     // contracts.
     ITechPayMintAddressProvider public addressProvider;
 

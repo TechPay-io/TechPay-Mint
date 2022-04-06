@@ -13,10 +13,10 @@ import "../interfaces/IERC20Detailed.sol";
 import "../interfaces/ITechPayMintAddressProvider.sol";
 
 /**
-* This provides addresses to deployed FMint modules
-* and related contracts cooperating on the FMint protocol.
+* This provides addresses to deployed Mint modules
+* and related contracts cooperating on the Mint protocol.
 * It's used to connects different modules to make the whole
-* FMint protocol live and work.
+* Mint protocol live and work.
 *
 * version 0.1.0
 * license MIT
@@ -51,7 +51,7 @@ contract TechPayMintAddressProvider is Initializable, Ownable, ITechPayMintAddre
     event LiquidationManagerChanged(address newAddress);
 
     // MinterChanged even is emitted when
-    // a new fMint Minter address is set.
+    // a new Mint Minter address is set.
     event MinterChanged(address newAddress);
 
     // PriceOracleChanged even is emitted when
@@ -199,7 +199,7 @@ contract TechPayMintAddressProvider is Initializable, Ownable, ITechPayMintAddre
     }
 
         /**
-     * setTechPayMint modifies the address of the TechPay fMint contract.
+     * setTechPayMint modifies the address of the TechPay Mint contract.
      */
     function setTechPayLiquidationManager(address _addr) public onlyOwner {
         // make the change
@@ -210,14 +210,14 @@ contract TechPayMintAddressProvider is Initializable, Ownable, ITechPayMintAddre
     }
 
     /**
-     * getTechPayMint returns the address of the TechPay fMint contract.
+     * getTechPayMint returns the address of the TechPay Mint contract.
      */
     function getTechPayMint() public view returns (ITechPayMintBalanceGuard) {
         return ITechPayMintBalanceGuard(getAddress(MOD_TECHPAY_MINT));
     }
 
     /**
-     * setTechPayMint modifies the address of the TechPay fMint contract.
+     * setTechPayMint modifies the address of the TechPay Mint contract.
      */
     function setTechPayMint(address _addr) public onlyOwner {
         // make the change

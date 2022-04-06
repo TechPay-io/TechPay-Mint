@@ -95,7 +95,7 @@ contract TechPayMintCollateral is Initializable, ReentrancyGuard, TechPayMintErr
     }
 
     // deposit receives assets to build up the collateral value.
-    // The collateral can be used later to mint tokens inside fMint module.
+    // The collateral can be used later to mint tokens inside Mint module.
     // The call does not subtract any fee. No interest is granted on deposit.
     function deposit(address _token, uint256 _amount) public nonReentrant returns (uint256) {
         return _deposit(_token, _amount);
@@ -120,7 +120,7 @@ contract TechPayMintCollateral is Initializable, ReentrancyGuard, TechPayMintErr
         }
 
         // make sure we are allowed to transfer funds from the caller
-        // to the fMint collateral pool
+        // to the Mint collateral pool
         if (_amount > ERC20(_token).allowance(msg.sender, address(this))) {
             return ERR_LOW_ALLOWANCE;
         }
