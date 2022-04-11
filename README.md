@@ -1,8 +1,7 @@
 # TechPay Mint DeFi module
 
 The repository implements Mint module of the TechPay DeFi smart contracts
-in Solidity based on [Andre Cronje's](https://github.com/andrecronje/flend)
-implementation.
+in Solidity.
 
 Please note we use
 [OpenZeppelin](https://github.com/OpenZeppelin/openzeppelin-contracts)
